@@ -3,6 +3,8 @@ import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Button, Card, Divider, useTheme } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { StorageService } from '../../services/StorageService';
+import BalanceChart from '../../components/BalanceChart';
+
 
 const BalanceTab = ({ route, navigation }) => {
     const { year, month } = route.params;
@@ -77,24 +79,11 @@ const BalanceTab = ({ route, navigation }) => {
 
                     <Divider style={styles.divider} />
 
-                    <Text variant="titleMedium" style={styles.sectionHeader}>Real (USD)</Text>
-                    <View style={styles.row}>
-                        <Text>Ingresos Reales:</Text>
-                        <Text style={[styles.money, { color: 'green' }]}>{totals.realIncome.toFixed(2)}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text>Egresos Reales:</Text>
-                        <Text style={[styles.money, { color: 'red' }]}>{totals.realExpense.toFixed(2)}</Text>
-                    </View>
+                    <BalanceChart
+                        income={totals.realIncome}
+                        expense={totals.realExpense}
+                    />
 
-                    <Divider style={styles.divider} />
-
-                    <View style={[styles.row, styles.balanceRow]}>
-                        <Text variant="titleLarge">Balance:</Text>
-                        <Text variant="titleLarge" style={{ color: totals.balance >= 0 ? 'green' : 'red' }}>
-                            {totals.balance.toFixed(2)} USD
-                        </Text>
-                    </View>
                 </Card.Content>
             </Card>
 

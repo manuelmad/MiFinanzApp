@@ -4,12 +4,17 @@ import { useTheme } from 'react-native-paper';
 import BalanceTab from './tabs/BalanceTab';
 import IncomeTab from './tabs/IncomeTab';
 import ExpensesTab from './tabs/ExpensesTab';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
 
 const MonthDetailScreen = ({ route }) => {
     const { year, month } = route.params;
     const theme = useTheme();
+    const insets = useSafeAreaInsets();
 
     return (
         <Tab.Navigator
@@ -17,6 +22,15 @@ const MonthDetailScreen = ({ route }) => {
                 headerTitle: `Mes: ${month}/${year}`,
                 tabBarActiveTintColor: theme.colors.primary,
                 tabBarInactiveTintColor: 'gray',
+                tabBarActiveBackgroundColor: theme.colors.secondaryContainer,
+                tabBarStyle: {
+                    height: 60 + insets.bottom,
+                    paddingBottom: insets.bottom + 5,
+                },
+                tabBarItemStyle: {
+                    margin: 5,
+                    borderRadius: 10,
+                }
             }}
         >
             <Tab.Screen
@@ -25,8 +39,7 @@ const MonthDetailScreen = ({ route }) => {
                 initialParams={{ year, month }}
                 options={{
                     tabBarLabel: 'Balance',
-                    // icon can be added here if vector-icons installed, skipping for now as not strictly requested and to avoid complexities with font linking in bare react native if not using expo-vector-icons correctly. Expo usually has it.
-                    // But user didn't ask for specific icons.
+                    tabBarIcon: ({ color }) => <FontAwesome5 name="balance-scale-right" size={24} color="black" />,
                 }}
             />
             <Tab.Screen
@@ -34,7 +47,8 @@ const MonthDetailScreen = ({ route }) => {
                 component={IncomeTab}
                 initialParams={{ year, month }}
                 options={{
-                    tabBarLabel: 'Ingresos Reales'
+                    tabBarLabel: 'Ingresos Reales',
+                    tabBarIcon: ({ color }) => <FontAwesome6 name="money-bill-trend-up" size={24} color="#4CAF50" />,
                 }}
             />
             <Tab.Screen
@@ -42,7 +56,8 @@ const MonthDetailScreen = ({ route }) => {
                 component={ExpensesTab}
                 initialParams={{ year, month }}
                 options={{
-                    tabBarLabel: 'Egresos Reales'
+                    tabBarLabel: 'Egresos Reales',
+                    tabBarIcon: ({ color }) => <FontAwesome6 name="arrow-trend-down" size={24} color="#F44336" />,
                 }}
             />
         </Tab.Navigator>
