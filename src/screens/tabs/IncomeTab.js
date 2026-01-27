@@ -191,6 +191,9 @@ const IncomeTab = ({ route, navigation }) => {
                     + Nuevo
                 </Button>
             </View>
+            <View>
+                <Text>Toca cualquier ingreso para editar.</Text>
+            </View>
 
             <ScrollView>
                 <DataTable>

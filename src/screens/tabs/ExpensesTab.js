@@ -191,6 +191,9 @@ const ExpensesTab = ({ route, navigation }) => {
                     + Nuevo
                 </Button>
             </View>
+            <View>
+                <Text>Toca cualquier egreso para editar.</Text>
+            </View>
 
             <ScrollView>
                 <DataTable>

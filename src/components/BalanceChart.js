@@ -99,13 +99,17 @@ const BalanceChart = ({ income, expense }) => {
 
                 {/* Expense Red */}
                 {expenseRatio > 0 && (
-                    <Path
-                        d={describeArc(CENTER, CENTER, RADIUS, incomeEnd + gap / 2, 360 - gap / 2)}
-                        stroke="#F44336"
-                        strokeWidth={STROKE_WIDTH}
-                        fill="transparent"
-                        strokeLinecap="butt"
-                    />
+                    expenseRatio >= 1 ? (
+                        <Circle cx={CENTER} cy={CENTER} r={RADIUS} stroke="#F44336" strokeWidth={STROKE_WIDTH} fill="transparent" />
+                    ) : (
+                        <Path
+                            d={describeArc(CENTER, CENTER, RADIUS, incomeEnd + gap / 2, 360 - gap / 2)}
+                            stroke="#F44336"
+                            strokeWidth={STROKE_WIDTH}
+                            fill="transparent"
+                            strokeLinecap="butt"
+                        />
+                    )
                 )}
             </>
         );

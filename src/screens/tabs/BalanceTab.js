@@ -88,11 +88,11 @@ const BalanceTab = ({ route, navigation }) => {
             </Card>
 
             <View style={styles.actions}>
-                <Button mode="contained" onPress={() => navigation.navigate('Home')} style={styles.button}>
-                    Volver a Inicio
-                </Button>
                 <Button mode="contained-tonal" buttonColor={theme.colors.errorContainer} textColor={theme.colors.onErrorContainer} onPress={handleDeleteMonth} style={styles.button}>
                     Eliminar Mes Actual
+                </Button>
+                <Button mode="contained" onPress={() => navigation.navigate('Home')} style={styles.button}>
+                    Volver a Inicio
                 </Button>
             </View>
         </ScrollView>
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
         marginTop: 20
     },
     button: {
-        marginBottom: 10
+        marginBottom: 10,
     }
 });
 
