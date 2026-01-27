@@ -92,7 +92,7 @@ const BalanceChart = ({ income, expense }) => {
                             stroke="#4CAF50"
                             strokeWidth={STROKE_WIDTH}
                             fill="transparent"
-                            strokeLinecap="round" // Round edges for nicer look with gaps
+                            strokeLinecap="butt" // Round edges for nicer look with gaps
                         />
                     )
                 )}
@@ -104,7 +104,7 @@ const BalanceChart = ({ income, expense }) => {
                         stroke="#F44336"
                         strokeWidth={STROKE_WIDTH}
                         fill="transparent"
-                        strokeLinecap="round"
+                        strokeLinecap="butt"
                     />
                 )}
             </>
