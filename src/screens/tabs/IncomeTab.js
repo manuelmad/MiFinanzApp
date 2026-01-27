@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
-import { Button, DataTable, Portal, Text, TextInput, useTheme, IconButton } from 'react-native-paper';
+import { Button, DataTable, Portal, Text, TextInput, useTheme, IconButton, Switch } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { StorageService } from '../../services/StorageService';
 
@@ -11,9 +11,13 @@ const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, curre
     const [amountLocal, setAmountLocal] = useState('');
     const [amountUSD, setAmountUSD] = useState('');
     const [date, setDate] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
+    const [addition, setAddition] = useState('');
 
     useEffect(() => {
         if (visible) {
+            setIsAdding(false);
+            setAddition('');
             if (initialData) {
                 setDesc(initialData.description);
                 setAmountLocal(initialData.amountLocal.toString());
@@ -48,6 +52,16 @@ const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, curre
         }
     };
 
+    const handleAdditionChange = (val) => {
+        setAddition(val);
+        if (initialData) {
+            const base = parseFloat(initialData.amountLocal);
+            const add = parseFloat(val) || 0;
+            const newTotal = base + add;
+            handleLocalChange(newTotal.toString());
+        }
+    };
+
     const handleSave = () => {
         if (!desc || !amountLocal || !amountUSD || !date) {
             alert("Complete todos los campos");
@@ -71,9 +85,42 @@ const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, curre
                         {initialData ? 'Editar' : 'Agregar'} {type}
                     </Text>
 
+                    {initialData && (
+                        <View style={styles.switchContainer}>
+                            <Text>Sumar valor</Text>
+                            <Switch value={isAdding} onValueChange={setIsAdding} />
+                        </View>
+                    )}
+
                     <TextInput label="Descripción" value={desc} onChangeText={setDesc} style={styles.input} />
-                    <TextInput label={`Monto (${currencyCode})`} value={amountLocal} keyboardType="numeric" onChangeText={handleLocalChange} style={styles.input} />
-                    <TextInput label="Monto (USD)" value={amountUSD} keyboardType="numeric" onChangeText={handleUSDChange} style={styles.input} />
+
+                    {isAdding && (
+                        <TextInput
+                            label={`Monto a sumar (${currencyCode})`}
+                            value={addition}
+                            keyboardType="numeric"
+                            onChangeText={handleAdditionChange}
+                            style={styles.input}
+                            autoFocus
+                        />
+                    )}
+
+                    <TextInput
+                        label={`Monto Total (${currencyCode})`}
+                        value={amountLocal}
+                        keyboardType="numeric"
+                        onChangeText={handleLocalChange}
+                        style={styles.input}
+                        editable={!isAdding}
+                    />
+                    <TextInput
+                        label="Monto Total (USD)"
+                        value={amountUSD}
+                        keyboardType="numeric"
+                        onChangeText={handleUSDChange}
+                        style={styles.input}
+                        editable={!isAdding}
+                    />
                     <TextInput label="Fecha (YYYY-MM-DD)" value={date} onChangeText={setDate} style={styles.input} />
 
                     <View style={styles.modalButtons}>
@@ -192,6 +239,7 @@ const styles = StyleSheet.create({
     modalContent: { padding: 20, borderRadius: 8 },
     modalTitle: { marginBottom: 15, textAlign: 'center' },
     input: { marginBottom: 10 },
+    switchContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
     modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }
 });
 
