@@ -91,12 +91,22 @@ const HomeScreen = ({ navigation }) => {
                 </Button>
 
                 <Button
+                    mode="contained-tonal"
+                    disabled={!hasData}
+                    onPress={() => navigation.navigate('YearSelection')}
+                    style={styles.button}
+                    contentStyle={styles.buttonContent}
+                >
+                    Ver Estadísticas Anuales
+                </Button>
+
+                <Button
                     mode="contained"
                     onPress={() => setShowCreateModal(true)}
                     style={styles.button}
                     contentStyle={styles.buttonContent}
                 >
-                    Crear Mes Nuevo
+                    Crear Nuevo Mes
                 </Button>
             </View>
 
