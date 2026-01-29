@@ -87,7 +87,7 @@ const HomeScreen = ({ navigation }) => {
                     style={styles.button}
                     contentStyle={styles.buttonContent}
                 >
-                    Ver Cualquier Otro Mes
+                    Ver Otros Meses
                 </Button>
 
                 <Button

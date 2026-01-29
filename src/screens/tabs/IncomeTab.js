@@ -5,24 +5,20 @@ import { useFocusEffect } from '@react-navigation/native';
 import { StorageService } from '../../services/StorageService';
 
 // Generic Modal for Adding/Editing Transaction
-const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, currencyCode, type }) => {
+const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, currencyCode, type, parentDesc, isRenamingCategory }) => {
     const theme = useTheme();
     const [desc, setDesc] = useState('');
     const [amountLocal, setAmountLocal] = useState('');
     const [amountUSD, setAmountUSD] = useState('');
     const [date, setDate] = useState('');
-    const [isAdding, setIsAdding] = useState(false);
-    const [addition, setAddition] = useState('');
 
     useEffect(() => {
         if (visible) {
-            setIsAdding(false);
-            setAddition('');
             if (initialData) {
-                setDesc(initialData.description);
-                setAmountLocal(initialData.amountLocal.toString());
-                setAmountUSD(initialData.amountUSD.toString());
-                setDate(initialData.date);
+                setDesc(initialData.description || '');
+                setAmountLocal(initialData.amountLocal?.toString() || '');
+                setAmountUSD(initialData.amountUSD?.toString() || '');
+                setDate(initialData.date || '');
             } else {
                 setDesc('');
                 setAmountLocal('');
@@ -52,17 +48,14 @@ const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, curre
         }
     };
 
-    const handleAdditionChange = (val) => {
-        setAddition(val);
-        if (initialData) {
-            const base = parseFloat(initialData.amountLocal);
-            const add = parseFloat(val) || 0;
-            const newTotal = base + add;
-            handleLocalChange(newTotal.toString());
-        }
-    };
-
     const handleSave = () => {
+        if (isRenamingCategory) {
+            if (!desc) { alert("Ingrese una descripción"); return; }
+            onSubmit({ description: desc });
+            onClose();
+            return;
+        }
+
         if (!desc || !amountLocal || !amountUSD || !date) {
             alert("Complete todos los campos");
             return;
@@ -82,46 +75,30 @@ const TransactionModal = ({ visible, onClose, onSubmit, initialData, rate, curre
             <View style={styles.modalOverlay}>
                 <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
                     <Text variant="headlineSmall" style={styles.modalTitle}>
-                        {initialData ? 'Editar' : 'Agregar'} {type}
+                        {isRenamingCategory ? 'Renombrar Categoría' : (initialData ? 'Editar ' + type : 'Agregar ' + type)}
                     </Text>
-
-                    {initialData && (
-                        <View style={styles.switchContainer}>
-                            <Text>Sumar valor</Text>
-                            <Switch value={isAdding} onValueChange={setIsAdding} />
-                        </View>
-                    )}
 
                     <TextInput label="Descripción" value={desc} onChangeText={setDesc} style={styles.input} />
 
-                    {isAdding && (
-                        <TextInput
-                            label={`Monto a sumar (${currencyCode})`}
-                            value={addition}
-                            keyboardType="numeric"
-                            onChangeText={handleAdditionChange}
-                            style={styles.input}
-                            autoFocus
-                        />
+                    {!isRenamingCategory && (
+                        <>
+                            <TextInput
+                                label={`Monto (${currencyCode})`}
+                                value={amountLocal}
+                                keyboardType="numeric"
+                                onChangeText={handleLocalChange}
+                                style={styles.input}
+                            />
+                            <TextInput
+                                label="Monto (USD)"
+                                value={amountUSD}
+                                keyboardType="numeric"
+                                onChangeText={handleUSDChange}
+                                style={styles.input}
+                            />
+                            <TextInput label="Fecha (YYYY-MM-DD)" value={date} onChangeText={setDate} style={styles.input} />
+                        </>
                     )}
-
-                    <TextInput
-                        label={`Monto Total (${currencyCode})`}
-                        value={amountLocal}
-                        keyboardType="numeric"
-                        onChangeText={handleLocalChange}
-                        style={styles.input}
-                        editable={!isAdding}
-                    />
-                    <TextInput
-                        label="Monto Total (USD)"
-                        value={amountUSD}
-                        keyboardType="numeric"
-                        onChangeText={handleUSDChange}
-                        style={styles.input}
-                        editable={!isAdding}
-                    />
-                    <TextInput label="Fecha (YYYY-MM-DD)" value={date} onChangeText={setDate} style={styles.input} />
 
                     <View style={styles.modalButtons}>
                         <Button onPress={onClose} style={{ marginRight: 10 }}>Cancelar</Button>
@@ -138,7 +115,9 @@ const IncomeTab = ({ route, navigation }) => {
     const theme = useTheme();
     const [data, setData] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
+    const [editingParent, setEditingParent] = useState(null);
+    const [editingSub, setEditingSub] = useState(null);
+    const [isRenaming, setIsRenaming] = useState(false);
 
     const loadData = async () => {
         const monthData = await StorageService.getMonth(year, month);
@@ -147,15 +126,60 @@ const IncomeTab = ({ route, navigation }) => {
 
     useFocusEffect(useCallback(() => { loadData(); }, [year, month]));
 
-    const handleSaveItem = async (item) => {
-        if (!data) return;
-        const newIncomes = [...(data.incomes || [])];
-        const index = newIncomes.findIndex(i => i.id === item.id);
+    const recalculateTotals = (income) => {
+        const subEntries = income.subEntries || [];
+        const totalLocal = subEntries.reduce((sum, sub) => sum + sub.amountLocal, 0);
+        const totalUSD = subEntries.reduce((sum, sub) => sum + sub.amountUSD, 0);
+        return {
+            ...income,
+            amountLocal: totalLocal,
+            amountUSD: totalUSD
+        };
+    };
 
-        if (index >= 0) {
-            newIncomes[index] = item;
+    const handleSaveItem = async (formItem) => {
+        if (!data) return;
+        let newIncomes = [...(data.incomes || [])];
+
+        if (isRenaming && editingParent) {
+            const index = newIncomes.findIndex(i => i.id === editingParent.id);
+            if (index >= 0) {
+                newIncomes[index] = { ...newIncomes[index], description: formItem.description };
+            }
+        } else if (editingParent) {
+            // Adding/Editing sub-entry
+            const parentIndex = newIncomes.findIndex(i => i.id === editingParent.id);
+            if (parentIndex >= 0) {
+                let parent = { ...newIncomes[parentIndex] };
+                if (!parent.subEntries) {
+                    parent.subEntries = [{
+                        id: 'legacy-' + parent.id,
+                        amountLocal: parent.amountLocal,
+                        amountUSD: parent.amountUSD,
+                        date: parent.date,
+                        description: parent.description
+                    }];
+                }
+
+                const subIndex = parent.subEntries.findIndex(s => s.id === formItem.id);
+                if (subIndex >= 0) {
+                    parent.subEntries[subIndex] = formItem;
+                } else {
+                    parent.subEntries.push(formItem);
+                }
+                newIncomes[parentIndex] = recalculateTotals(parent);
+            }
         } else {
-            newIncomes.push(item);
+            // New income category
+            const newItem = {
+                id: Date.now().toString(),
+                description: formItem.description,
+                subEntries: [formItem],
+                amountLocal: formItem.amountLocal,
+                amountUSD: formItem.amountUSD,
+                date: formItem.date
+            };
+            newIncomes.push(newItem);
         }
 
         const newData = { ...data, incomes: newIncomes };
@@ -163,8 +187,8 @@ const IncomeTab = ({ route, navigation }) => {
         loadData();
     };
 
-    const handleDelete = async (id) => {
-        Alert.alert("Eliminar", "¿Borrar este ingreso?", [
+    const handleDeleteMain = async (id) => {
+        Alert.alert("Eliminar Todo", "¿Borrar este grupo de ingresos y todos sus valores?", [
             { text: "Cancel" },
             {
                 text: "Eliminar", style: 'destructive', onPress: async () => {
@@ -176,8 +200,58 @@ const IncomeTab = ({ route, navigation }) => {
         ]);
     };
 
-    const openEdit = (item) => {
-        setEditingItem(item);
+    const handleDeleteSub = async (parentId, subId) => {
+        Alert.alert("Eliminar Valor", "¿Borrar este valor individual?", [
+            { text: "Cancel" },
+            {
+                text: "Eliminar", style: 'destructive', onPress: async () => {
+                    const newIncomes = [...data.incomes];
+                    const parentIndex = newIncomes.findIndex(i => i.id === parentId);
+                    if (parentIndex >= 0) {
+                        const parent = { ...newIncomes[parentIndex] };
+                        parent.subEntries = (parent.subEntries || []).filter(s => s.id !== subId);
+
+                        if (parent.subEntries.length === 0) {
+                            // If no subEntries left, maybe delete the main one? 
+                            // Or keep it with 0? I'll delete it if it's empty to keep it clean.
+                            newIncomes.splice(parentIndex, 1);
+                        } else {
+                            newIncomes[parentIndex] = recalculateTotals(parent);
+                        }
+
+                        await StorageService.saveMonth(year, month, { ...data, incomes: newIncomes });
+                        loadData();
+                    }
+                }
+            }
+        ]);
+    };
+
+    const openAddNew = () => {
+        setEditingParent(null);
+        setEditingSub(null);
+        setIsRenaming(false);
+        setModalVisible(true);
+    };
+
+    const openAddSub = (parent) => {
+        setEditingParent(parent);
+        setEditingSub(null);
+        setIsRenaming(false);
+        setModalVisible(true);
+    };
+
+    const openEditSub = (parent, sub) => {
+        setEditingParent(parent);
+        setEditingSub(sub);
+        setIsRenaming(false);
+        setModalVisible(true);
+    };
+
+    const openRenameCategory = (parent) => {
+        setEditingParent(parent);
+        setEditingSub({ description: parent.description });
+        setIsRenaming(true);
         setModalVisible(true);
     };
 
@@ -187,30 +261,70 @@ const IncomeTab = ({ route, navigation }) => {
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={styles.headerRow}>
                 <Text variant="titleMedium">Ingresos Reales</Text>
-                <Button mode="contained" onPress={() => { setEditingItem(null); setModalVisible(true); }}>
+                <Button mode="contained" onPress={openAddNew}>
                     + Nuevo
                 </Button>
-            </View>
-            <View>
-                <Text>Toca cualquier ingreso para editar.</Text>
             </View>
 
             <ScrollView>
                 <DataTable>
                     <DataTable.Header>
-                        <DataTable.Title>Desc</DataTable.Title>
+                        <DataTable.Title style={{ flex: 2 }}>Descripción / Fecha</DataTable.Title>
                         <DataTable.Title numeric>USD</DataTable.Title>
-                        <DataTable.Title numeric>Actions</DataTable.Title>
+                        <DataTable.Title numeric>Acciones</DataTable.Title>
                     </DataTable.Header>
 
                     {(data.incomes || []).map((item) => (
-                        <DataTable.Row key={item.id} onPress={() => openEdit(item)}>
-                            <DataTable.Cell>{item.description}</DataTable.Cell>
-                            <DataTable.Cell numeric>{item.amountUSD.toFixed(2)}</DataTable.Cell>
-                            <DataTable.Cell numeric>
-                                <IconButton icon="delete" size={20} onPress={() => handleDelete(item.id)} />
-                            </DataTable.Cell>
-                        </DataTable.Row>
+                        <React.Fragment key={item.id}>
+                            <DataTable.Row style={{ backgroundColor: theme.colors.surfaceVariant }}>
+                                <DataTable.Cell style={{ flex: 2 }}>
+                                    <Text style={{ fontWeight: 'bold' }}>{item.description}</Text>
+                                </DataTable.Cell>
+                                <DataTable.Cell numeric>
+                                    <Text style={{ fontWeight: 'bold' }}>{item.amountUSD.toFixed(2)}</Text>
+                                </DataTable.Cell>
+                                <DataTable.Cell numeric>
+                                    <View style={{ flexDirection: 'row' }}>
+                                        <IconButton style={{ marginRight: 40 }} icon="pencil-outline" size={18} onPress={() => openRenameCategory(item)} />
+                                        <IconButton icon="plus" size={18} onPress={() => openAddSub(item)} />
+                                        <IconButton icon="delete-sweep" size={18} onPress={() => handleDeleteMain(item.id)} />
+                                    </View>
+                                </DataTable.Cell>
+                            </DataTable.Row>
+
+                            {(item.subEntries || []).map((sub) => (
+                                <DataTable.Row key={sub.id} onPress={() => openEditSub(item, sub)}>
+                                    <DataTable.Cell style={{ flex: 2, paddingLeft: 15 }}>
+                                        <View>
+                                            <Text variant="bodySmall" style={{ fontWeight: '500' }}>
+                                                └ {sub.description || '(Sin desc)'}
+                                            </Text>
+                                            <Text variant="labelSmall" style={{ color: theme.colors.outline, marginLeft: 12 }}>
+                                                {sub.date}
+                                            </Text>
+                                        </View>
+                                    </DataTable.Cell>
+                                    <DataTable.Cell numeric>
+                                        <Text variant="bodySmall">{sub.amountUSD.toFixed(2)}</Text>
+                                    </DataTable.Cell>
+                                    <DataTable.Cell numeric>
+                                        <IconButton icon="delete-outline" size={16} onPress={() => handleDeleteSub(item.id, sub.id)} />
+                                    </DataTable.Cell>
+                                </DataTable.Row>
+                            ))}
+
+                            {(!item.subEntries || item.subEntries.length === 0) && (
+                                <DataTable.Row onPress={() => openAddSub(item)}>
+                                    <DataTable.Cell style={{ flex: 2, paddingLeft: 15 }}>
+                                        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+                                            (Sin registros. Toca para agregar)
+                                        </Text>
+                                    </DataTable.Cell>
+                                    <DataTable.Cell numeric>-</DataTable.Cell>
+                                    <DataTable.Cell numeric>-</DataTable.Cell>
+                                </DataTable.Row>
+                            )}
+                        </React.Fragment>
                     ))}
                 </DataTable>
             </ScrollView>
@@ -225,10 +339,12 @@ const IncomeTab = ({ route, navigation }) => {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSubmit={handleSaveItem}
-                initialData={editingItem}
+                initialData={editingSub}
+                parentDesc={editingParent ? editingParent.description : null}
                 rate={data.rate}
                 currencyCode={data.currency.code}
-                type="Ingreso"
+                type={editingParent ? "Valor" : "Ingreso"}
+                isRenamingCategory={isRenaming}
             />
         </View>
     );
