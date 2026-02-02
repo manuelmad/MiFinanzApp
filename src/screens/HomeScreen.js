@@ -45,7 +45,8 @@ const HomeScreen = ({ navigation }) => {
                 monthData.currency,
                 monthData.rate,
                 monthData.incomeEst,
-                monthData.expenseEst
+                monthData.expenseEst,
+                monthData.expenseEstItems
             );
             await loadData(); // Refresh state
             // Optionally navigate to the new month immediately? 

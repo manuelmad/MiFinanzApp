@@ -13,7 +13,8 @@ const CreateMonthModal = ({ visible, onClose, onSubmit }) => {
     const [selectedCurrency, setSelectedCurrency] = useState(null);
     const [rate, setRate] = useState('');
     const [incomeEst, setIncomeEst] = useState('');
-    const [expenseEst, setExpenseEst] = useState('');
+    const [expenseItems, setExpenseItems] = useState([{ description: '', amount: '' }]);
+    const [expenseEst, setExpenseEst] = useState('0');
 
     // UI State
     const [showCurrencyList, setShowCurrencyList] = useState(false);
@@ -28,7 +29,8 @@ const CreateMonthModal = ({ visible, onClose, onSubmit }) => {
             setSelectedCurrency(null);
             setRate('');
             setIncomeEst('');
-            setExpenseEst('');
+            setExpenseItems([{ description: '', amount: '' }]);
+            setExpenseEst('0');
             setShowCurrencyList(false);
         }
     }, [visible]);
@@ -45,6 +47,34 @@ const CreateMonthModal = ({ visible, onClose, onSubmit }) => {
             setShowCurrencyList(false);
         }
     }, [currencyName, selectedCurrency]);
+
+    useEffect(() => {
+        const total = expenseItems.reduce((sum, item) => {
+            const val = parseFloat(item.amount);
+            return sum + (isNaN(val) ? 0 : val);
+        }, 0);
+        setExpenseEst(total.toString());
+    }, [expenseItems]);
+
+    const addExpenseItem = () => {
+        setExpenseItems([...expenseItems, { description: '', amount: '' }]);
+    };
+
+    const removeExpenseItem = (index) => {
+        if (expenseItems.length > 1) {
+            const newItems = [...expenseItems];
+            newItems.splice(index, 1);
+            setExpenseItems(newItems);
+        } else {
+            setExpenseItems([{ description: '', amount: '' }]);
+        }
+    };
+
+    const updateExpenseItem = (index, field, value) => {
+        const newItems = [...expenseItems];
+        newItems[index][field] = value;
+        setExpenseItems(newItems);
+    };
 
     const handleCurrencySelect = (curr) => {
         setSelectedCurrency(curr);
@@ -71,7 +101,8 @@ const CreateMonthModal = ({ visible, onClose, onSubmit }) => {
             currency: selectedCurrency,
             rate: parseFloat(rate),
             incomeEst: parseFloat(incomeEst),
-            expenseEst: parseFloat(expenseEst)
+            expenseEst: parseFloat(expenseEst),
+            expenseEstItems: expenseItems.filter(item => item.description.trim() !== '' && !isNaN(parseFloat(item.amount)))
         });
         onClose();
     };
@@ -147,11 +178,38 @@ const CreateMonthModal = ({ visible, onClose, onSubmit }) => {
                             mode="outlined"
                         />
 
+                        <Text variant="titleMedium" style={styles.sectionTitle}>Egresos Estimados</Text>
+                        {expenseItems.map((item, index) => (
+                            <View key={index} style={styles.itemRow}>
+                                <TextInput
+                                    label="Descripción"
+                                    value={item.description}
+                                    onChangeText={(text) => updateExpenseItem(index, 'description', text)}
+                                    style={[styles.input, { flex: 2, marginRight: 8 }]}
+                                    mode="outlined"
+                                />
+                                <TextInput
+                                    label="Monto (USD)"
+                                    value={item.amount}
+                                    keyboardType="numeric"
+                                    onChangeText={(text) => updateExpenseItem(index, 'amount', text)}
+                                    style={[styles.input, { flex: 1, marginRight: 8 }]}
+                                    mode="outlined"
+                                />
+                                <TouchableOpacity onPress={() => removeExpenseItem(index)} style={styles.removeIcon}>
+                                    <TextInput.Icon icon="delete" color={theme.colors.error} />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+
+                        <Button icon="plus" mode="outlined" onPress={addExpenseItem} style={styles.addButton}>
+                            Agregar Item de Egreso
+                        </Button>
+
                         <TextInput
                             label="Egreso Total Estimado (USD)"
                             value={expenseEst}
-                            keyboardType="numeric"
-                            onChangeText={setExpenseEst}
+                            editable={false}
                             style={styles.input}
                             mode="outlined"
                         />
@@ -222,6 +280,26 @@ const styles = StyleSheet.create({
     },
     button: {
         marginLeft: 10
+    },
+    sectionTitle: {
+        marginTop: 10,
+        marginBottom: 10,
+        fontWeight: 'bold'
+    },
+    itemRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5
+    },
+    removeIcon: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 50,
+        width: 40
+    },
+    addButton: {
+        marginBottom: 20,
+        marginTop: 5
     }
 });
 

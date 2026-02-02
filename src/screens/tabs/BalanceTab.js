@@ -73,9 +73,20 @@ const BalanceTab = ({ route, navigation }) => {
                         <Text style={styles.money}>{data.incomeEst.toFixed(2)}</Text>
                     </View>
                     <View style={styles.row}>
-                        <Text>Egreso Total:</Text>
+                        <Text style={styles.totalLabel}>Egreso Total:</Text>
                         <Text style={styles.money}>{data.expenseEst.toFixed(2)}</Text>
                     </View>
+
+                    {data.expenseEstItems && data.expenseEstItems.length > 0 && (
+                        <View style={styles.breakdownContainer}>
+                            {data.expenseEstItems.map((item, index) => (
+                                <View key={index} style={styles.breakdownRow}>
+                                    <Text style={styles.breakdownLabel}>• {item.description}</Text>
+                                    <Text style={styles.breakdownValue}>{parseFloat(item.amount).toFixed(2)}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
 
                     <Divider style={styles.divider} />
 
@@ -138,6 +149,27 @@ const styles = StyleSheet.create({
     },
     button: {
         marginBottom: 10,
+    },
+    totalLabel: {
+        fontWeight: 'bold',
+    },
+    breakdownContainer: {
+        marginLeft: 15,
+        marginTop: 5,
+        marginBottom: 10,
+    },
+    breakdownRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginVertical: 2,
+    },
+    breakdownLabel: {
+        fontSize: 14,
+        color: '#666',
+    },
+    breakdownValue: {
+        fontSize: 14,
+        color: '#666',
     }
 });
 

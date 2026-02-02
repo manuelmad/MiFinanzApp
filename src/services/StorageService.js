@@ -57,12 +57,13 @@ export const StorageService = {
     },
 
     // Create new month (initial data)
-    createMonth: async (year, month, currency, rate, incomeEst, expenseEst) => {
+    createMonth: async (year, month, currency, rate, incomeEst, expenseEst, expenseEstItems = []) => {
         const newMonth = {
             currency,
             rate,
             incomeEst,
             expenseEst,
+            expenseEstItems,
             incomes: [],
             expenses: []
         };
