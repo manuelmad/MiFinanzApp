@@ -63,12 +63,17 @@ const BalanceTab = ({ route, navigation }) => {
             return;
         }
 
-        const updatedItems = [...data.expenseEstItems];
+        let updatedItems = data.expenseEstItems ? [...data.expenseEstItems] : [];
         if (editingExpenseIndex !== null) {
             updatedItems[editingExpenseIndex] = {
                 description: tempExpenseDescription,
                 amount: amountValue
             };
+        } else {
+            updatedItems.push({
+                description: tempExpenseDescription,
+                amount: amountValue
+            });
         }
 
         const newExpenseEst = updatedItems.reduce((sum, item) => sum + parseFloat(item.amount), 0);
@@ -236,7 +241,20 @@ const BalanceTab = ({ route, navigation }) => {
                         <Text style={styles.money}>{data.incomeEst.toFixed(2)}</Text>
                     </View>
                     <View style={styles.row}>
-                        <Text style={styles.totalLabel}>Egreso Total:</Text>
+                        <View style={styles.labelContainer}>
+                            <Text style={styles.totalLabel}>Egreso Total:</Text>
+                            <IconButton
+                                icon="plus-circle"
+                                size={18}
+                                iconColor={theme.colors.primary}
+                                onPress={() => {
+                                    setEditingExpenseIndex(null);
+                                    setTempExpenseDescription('');
+                                    setTempExpenseAmount('');
+                                    setExpenseDialogVisible(true);
+                                }}
+                            />
+                        </View>
                         <Text style={styles.money}>{data.expenseEst.toFixed(2)}</Text>
                     </View>
 
