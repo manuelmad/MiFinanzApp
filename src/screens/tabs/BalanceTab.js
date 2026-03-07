@@ -26,6 +26,7 @@ const BalanceTab = ({ route, navigation }) => {
     const [editingExpenseIndex, setEditingExpenseIndex] = useState(null);
     const [tempExpenseDescription, setTempExpenseDescription] = useState('');
     const [tempExpenseAmount, setTempExpenseAmount] = useState('');
+    const [showExpenseItems, setShowExpenseItems] = useState(false);
 
     const loadData = async () => {
         const monthData = await StorageService.getMonth(year, month);
@@ -256,9 +257,14 @@ const BalanceTab = ({ route, navigation }) => {
                             />
                         </View>
                         <Text style={styles.money}>{data.expenseEst.toFixed(2)}</Text>
+                        <IconButton
+                            icon={showExpenseItems ? "chevron-up" : "chevron-down"}
+                            size={20}
+                            onPress={() => setShowExpenseItems(!showExpenseItems)}
+                        />
                     </View>
 
-                    {data.expenseEstItems && data.expenseEstItems.length > 0 && (
+                    {showExpenseItems && data.expenseEstItems && data.expenseEstItems.length > 0 && (
                         <View style={styles.breakdownContainer}>
                             {data.expenseEstItems.map((item, index) => (
                                 <View key={index} style={styles.breakdownRow}>
