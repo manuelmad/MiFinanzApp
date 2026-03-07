@@ -4,6 +4,7 @@ import { Text, Button, Card, Divider, useTheme, IconButton, Portal, Dialog, Text
 import { useFocusEffect } from '@react-navigation/native';
 import { StorageService } from '../../services/StorageService';
 import BalanceChart from '../../components/BalanceChart';
+import { ExcelExport } from '../../utils/ExcelExport';
 
 
 const BalanceTab = ({ route, navigation }) => {
@@ -203,6 +204,15 @@ const BalanceTab = ({ route, navigation }) => {
         );
     };
 
+    const handleExportExcel = async () => {
+        try {
+            await ExcelExport.generateMonthlyExcel(data, year, month);
+        } catch (error) {
+            console.error('Error exporting excel', error);
+            Alert.alert("Error", "No se pudo generar el archivo Excel.");
+        }
+    };
+
     if (!data) return <View style={styles.loading}><Text>Cargando...</Text></View>;
 
     return (
@@ -311,6 +321,14 @@ const BalanceTab = ({ route, navigation }) => {
                 </Button>
                 <Button mode="contained" onPress={() => navigation.navigate('Home')} style={styles.button}>
                     Volver a Inicio
+                </Button>
+                <Button
+                    mode="outlined"
+                    icon="microsoft-excel"
+                    onPress={handleExportExcel}
+                    style={styles.button}
+                >
+                    Descargar Excel
                 </Button>
             </View>
 
