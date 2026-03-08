@@ -48,7 +48,7 @@ export const ExcelExport = {
             if (income.subEntries && income.subEntries.length > 0) {
                 income.subEntries.forEach((sub, idx) => {
                     incomeRows.push([
-                        idx === 0 ? income.date : '',
+                        sub.date || income.date,
                         idx === 0 ? income.description : '',
                         sub.amountUSD,
                         sub.amountLocal,
@@ -74,7 +74,7 @@ export const ExcelExport = {
             if (expense.subEntries && expense.subEntries.length > 0) {
                 expense.subEntries.forEach((sub, idx) => {
                     expenseRows.push([
-                        idx === 0 ? expense.date : '',
+                        sub.date || expense.date,
                         idx === 0 ? expense.description : '',
                         sub.amountUSD,
                         sub.amountLocal,
