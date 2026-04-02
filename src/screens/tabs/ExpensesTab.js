@@ -118,6 +118,14 @@ const ExpensesTab = ({ route, navigation }) => {
     const [editingParent, setEditingParent] = useState(null);
     const [editingSub, setEditingSub] = useState(null);
     const [isRenaming, setIsRenaming] = useState(false);
+    const [expandedItems, setExpandedItems] = useState({});
+
+    const toggleExpand = (id) => {
+        setExpandedItems(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
 
     const loadData = async () => {
         const monthData = await StorageService.getMonth(year, month);
@@ -272,9 +280,19 @@ const ExpensesTab = ({ route, navigation }) => {
 
                     {(data.expenses || []).map((item) => (
                         <React.Fragment key={item.id}>
-                            <DataTable.Row style={{ backgroundColor: theme.colors.surfaceVariant }}>
+                            <DataTable.Row
+                                style={{ backgroundColor: theme.colors.surfaceVariant }}
+                                onPress={() => toggleExpand(item.id)}
+                            >
                                 <DataTable.Cell style={{ flex: 2 }}>
-                                    <Text style={{ fontWeight: 'bold' }}>{item.description}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <IconButton
+                                            icon={expandedItems[item.id] ? 'chevron-down' : 'chevron-right'}
+                                            size={20}
+                                            style={{ margin: 0, marginRight: -8 }}
+                                        />
+                                        <Text style={{ fontWeight: 'bold' }}>{item.description}</Text>
+                                    </View>
                                 </DataTable.Cell>
                                 <DataTable.Cell numeric>
                                     <Text style={{ fontWeight: 'bold' }}>{item.amountUSD.toFixed(2)}</Text>
@@ -288,7 +306,7 @@ const ExpensesTab = ({ route, navigation }) => {
                                 </DataTable.Cell>
                             </DataTable.Row>
 
-                            {(item.subEntries || []).map((sub) => (
+                            {expandedItems[item.id] && (item.subEntries || []).map((sub) => (
                                 <DataTable.Row key={sub.id} onPress={() => openEditSub(item, sub)}>
                                     <DataTable.Cell style={{ flex: 2, paddingLeft: 15 }}>
                                         <View>
